@@ -61,7 +61,7 @@ def api_model_id_client():
     with open('./data/best_model_seuil.pickle', 'rb') as f:
         model, seuil = pickle.load(f)
 
-    echantillon = DATA_SELECTION.loc[DATA_SELECTION["SK_ID_CURR"]==SK_ID_CURR_UNIQUE].drop('SK_ID_CURR', axis=1).values.reshape(1, -1)
+    echantillon = DATA_SELECTION.loc[DATA_SELECTION["SK_ID_CURR"]==SK_ID_CURR_UNIQUE].drop('SK_ID_CURR', axis=1)
 
     probabilites = model.predict_proba(echantillon)[:, 1]
     predictions = (probabilites > seuil).astype(int)
