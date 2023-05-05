@@ -32,8 +32,7 @@ def api_id_client():
     # If no ID is provided, display an error in the browser.
     if 'SK_ID_CURR' in request.args:
         SK_ID_CURR_UNIQUE = int(request.args['SK_ID_CURR'])
-    else:
-        return "Erreur: Il n'y a pas de champs SK_ID_CURR. Merci de renseigner un SK_ID_CURR."
+
     # Create an empty list for our results
     results = []
     # Loop through the data and match results that fit the requested ID.
