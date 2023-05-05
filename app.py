@@ -1,14 +1,16 @@
 from flask import Flask, request, jsonify
 import pandas as pd
+import pickle
+
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
 
 
 SK_ID_CURR = pd.read_csv("./data/SK_ID_CURR.csv").to_dict(orient='records')
-DATA_SELECTION = pd.read_csv("./data/DATA_SELECTION.csv").to_dict(orient='records')
+DATA_SELECTION = pd.read_csv("./data/DATA_SELECTION.csv")
 
-
+# page de base
 # test avec http://127.0.0.1:5001
 @app.route('/', methods=['GET'])
 def home():
@@ -38,12 +40,33 @@ def api_id_client():
     # Loop through the data and match results that fit the requested ID.
     # IDs are unique, but other fields might return many results
 
-    for individu in DATA_SELECTION:
+    for individu in DATA_SELECTION.to_dict(orient='records'):
         if individu['SK_ID_CURR'] == SK_ID_CURR_UNIQUE:
             results.append(individu)
     # Use the jsonify function from Flask to convert our list of
     # Python dictionaries to the JSON format.
     return jsonify(results)
+
+
+# une route pour renvoyer le résultat du modèle pour un id client
+# test avec http://127.0.0.1:5001/api/v1/model/id_clients?SK_ID_CURR=222222
+@app.route('/api/v1/model/id_clients', methods=['GET'])
+def api_model_id_client():
+    # Check if an ID was provided as part of the URL.
+    # If ID is provided, assign it to a variable.
+    # If no ID is provided, display an error in the browser.
+    if 'SK_ID_CURR' in request.args:
+        SK_ID_CURR_UNIQUE = int(request.args['SK_ID_CURR'])
+
+    with open('./data/best_model_seuil.pickle', 'rb') as f:
+        model, seuil = pickle.load(f)
+
+    echantillon = DATA_SELECTION.loc[DATA_SELECTION["SK_ID_CURR"]==SK_ID_CURR_UNIQUE].drop('SK_ID_CURR', axis=1).values.reshape(1, -1)
+
+    probabilites = model.predict_proba(echantillon)[:, 1]
+    predictions = (probabilites > seuil).astype(int)
+
+    return jsonify(predictions.tolist())
 
 
 
