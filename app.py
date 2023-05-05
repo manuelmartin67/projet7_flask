@@ -15,6 +15,7 @@ def home():
 
 
 # une route pour renvoyer la liste des id clients
+# test avec http://127.0.0.1:5001/api/v1/data/id_clients/all
 @app.route('/api/v1/data/id_clients/all', methods=['GET'])
 def api_id_client_all():
     SK_ID_CURR = pd.read_csv("./data/SK_ID_CURR.csv").to_dict(orient='records')
