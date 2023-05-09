@@ -3,6 +3,11 @@ import pandas as pd
 import pickle
 import lime
 import lime.lime_tabular
+import math
+from matplotlib.figure import Figure
+import base64
+from io import BytesIO
+import numpy as np
 
 
 
@@ -111,6 +116,81 @@ def explain_prediction():
 
     return response
 
+
+
+# une route pour renvoyer un graphe de comparaison entre l'échantillon de l'id client et la population
+# test avec http://127.0.0.1:5001/api/v1/model/id_clients/comparaison?SK_ID_CURR=222222
+# test avec http://127.0.0.1:5001/api/v1/model/id_clients/comparaison?SK_ID_CURR=222222&feature=15
+@app.route('/api/v1/model/id_clients/comparaison/', methods=['GET'])
+def comparaison():
+    # Check if an ID was provided as part of the URL.
+    # If ID is provided, assign it to a variable.
+    # If no ID is provided, display an error in the browser.
+    if 'SK_ID_CURR' in request.args:
+        SK_ID_CURR_UNIQUE = int(request.args['SK_ID_CURR'])
+
+    #nb_feature = 10
+
+    #if 'feature' in request.args:
+        #nb_feature = int(request.args['feature'])
+
+    echantillon = DATA_SELECTION.loc[DATA_SELECTION["SK_ID_CURR"] == SK_ID_CURR_UNIQUE].drop('SK_ID_CURR', axis=1)
+
+    # calcul des dimensions des sous-plots
+    n = len(echantillon.columns)
+    rows = math.ceil(n / 3)
+    cols = min(n, 3)
+
+    fig = Figure(figsize=(12, rows * 3))
+    axs = fig.subplots(nrows=rows, ncols=cols, squeeze=False)
+
+    # création de la figure et des axes
+    #fig, axs = plt.subplots(nrows=rows, ncols=cols, figsize=(20, rows * 3), squeeze=False)
+
+    # génération des graphes pour chaque feature
+    for i, feature in enumerate(echantillon.columns):
+        row = i // cols
+        col = i % cols
+
+        # Calcul de la moyenne et de l'écart type de l'échantillon
+        all_mean = np.mean(DATA_SELECTION[feature])
+        sample_mean = np.mean(echantillon[feature])
+
+        # histogramme des valeurs pour tous les individus dans le dataset
+        axs[row, col].hist(DATA_SELECTION[feature].values, bins=20, alpha=0.5, label='Population')
+
+        # Affichage de la droite verticale de la moyenne de l'échantillon
+        axs[row, col].axvline(x=sample_mean, color='red', linestyle='--', label='Sample')
+
+        # Affichage de la droite verticale de la moyenne de la population
+        axs[row, col].axvline(x=all_mean, color='black', linestyle='-', label='Population Mean')
+
+        # Configuration du graphique
+        axs[row, col].set_xlabel('Values')
+        axs[row, col].set_ylabel('Frequency')
+        axs[row, col].set_title('Distribution of Data')
+        axs[row, col].legend()
+
+        # ajout d'un titre pour le graphe
+        axs[row, col].set_title(feature)
+
+        # ajout d'une légende pour les histogrammes
+        axs[row, col].legend()
+
+    # suppression des graphiques vides de la dernière ligne
+    if len(echantillon.columns) % 3 != 0:
+        for i in range(len(echantillon.columns) % 3, 3):
+            fig.delaxes(axs[-1, i])
+
+    # ajustement de l'espacement entre les sous-plots
+    fig.tight_layout()
+
+    # Save it to a temporary buffer.
+    buf = BytesIO()
+    fig.savefig(buf, format="png")
+    # Embed the result in the html output.
+    data = base64.b64encode(buf.getbuffer()).decode("ascii")
+    return f"<img src='data:image/png;base64,{data}'/>"
 
 
 app.run(port=5001)
