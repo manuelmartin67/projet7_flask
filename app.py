@@ -8,6 +8,7 @@ from matplotlib.figure import Figure
 import base64
 from io import BytesIO
 import numpy as np
+import seaborn as sns
 
 
 
@@ -18,6 +19,24 @@ app.config["DEBUG"] = True
 SK_ID_CURR = pd.read_csv("./data/SK_ID_CURR.csv").to_dict(orient='records')
 DATA_SELECTION = pd.read_csv("./data/DATA_SELECTION.csv")
 X_train = pd.read_csv("./data/X_train.csv")
+
+with open('./data/best_model_seuil.pickle', 'rb') as f:
+    model, seuil = pickle.load(f)
+
+# initialisation de la méthode LIME pour expliquer les prédictions
+explainer = lime.lime_tabular.LimeTabularExplainer(X_train.values, feature_names=X_train.columns,
+                                                   class_names=['Accept. > 0.6', 'Refus > 0.4'])
+
+# Obtenez le modèle LGBMClassifier du pipeline
+clf_model = model.named_steps['clf']
+# Obtenez les feature importance
+importance = clf_model.feature_importances_
+# Obtenez les noms de colonnes correspondant aux feature importance
+feature_names = model.named_steps['scale'].get_feature_names_out()
+# Créez un DataFrame pour stocker les feature importance
+feature_importance_df = pd.DataFrame({'feature': feature_names, 'importance': importance}).sort_values('importance',
+                                                                                                       ascending=False)
+
 
 # page de base
 # test avec http://127.0.0.1:5001
@@ -67,22 +86,24 @@ def api_model_id_client():
     if 'SK_ID_CURR' in request.args:
         SK_ID_CURR_UNIQUE = int(request.args['SK_ID_CURR'])
 
-    with open('./data/best_model_seuil.pickle', 'rb') as f:
-        model, seuil = pickle.load(f)
-
     echantillon = DATA_SELECTION.loc[DATA_SELECTION["SK_ID_CURR"]==SK_ID_CURR_UNIQUE].drop('SK_ID_CURR', axis=1)
 
     probabilites = model.predict_proba(echantillon)[:, 1]
     predictions = (probabilites > seuil).astype(int)
 
-    return jsonify(predictions.tolist())
+    if predictions== 1 :
+        predictions = "Refus"
+    if predictions== 0 :
+        predictions = "Acceptation"
+
+    return jsonify(predictions)
 
 
 # une route pour renvoyer un graphe d'importance locale lime du modèle pour un id client
 # test avec http://127.0.0.1:5001/api/v1/model/id_clients/importance_locale?SK_ID_CURR=222222
 # test avec http://127.0.0.1:5001/api/v1/model/id_clients/importance_locale?SK_ID_CURR=222222&feature=15
 @app.route('/api/v1/model/id_clients/importance_locale/', methods=['GET'])
-def explain_prediction():
+def importance_locale():
     # Check if an ID was provided as part of the URL.
     # If ID is provided, assign it to a variable.
     # If no ID is provided, display an error in the browser.
@@ -95,14 +116,6 @@ def explain_prediction():
         nb_feature = int(request.args['feature'])
 
     echantillon = DATA_SELECTION.loc[DATA_SELECTION["SK_ID_CURR"] == SK_ID_CURR_UNIQUE].drop('SK_ID_CURR', axis=1).values[0]
-
-
-    with open('./data/best_model_seuil.pickle', 'rb') as f:
-        model, seuil = pickle.load(f)
-
-    # initialisation de la méthode LIME pour expliquer les prédictions
-    explainer = lime.lime_tabular.LimeTabularExplainer(X_train.values, feature_names=X_train.columns,
-                                                       class_names=['0', '1'])
 
     # explication de la première observation de test
     exp = explainer.explain_instance(echantillon, model.predict_proba,num_features=nb_feature)
@@ -118,6 +131,42 @@ def explain_prediction():
 
 
 
+# une route pour renvoyer un graphe d'importance globale
+# test avec http://127.0.0.1:5001/api/v1/model/id_clients/importance_globale?feature=15
+# test avec http://127.0.0.1:5001/api/v1/model/id_clients/importance_globale
+@app.route('/api/v1/model/id_clients/importance_globale/', methods=['GET'])
+def importance_globale():
+    nb_feature = 10
+
+    if 'feature' in request.args:
+        nb_feature = int(request.args['feature'])
+
+    # Triez les features par ordre d'importance décroissant
+    feature_importance_df_selection = feature_importance_df.head(nb_feature)
+
+    # Tracez la feature importance globale
+    fig= Figure(figsize=(12, 5))
+    axe = fig.add_subplot(111)
+    axe.barh(y=feature_importance_df_selection['feature'], width=feature_importance_df_selection['importance'])
+
+    axe.set_xlabel('Importance')
+    axe.set_ylabel('Feature')
+    axe.set_title('Feature Importance')
+    axe.legend()
+    axe.invert_yaxis()
+    fig.subplots_adjust(left=0.5)
+
+
+    # https://matplotlib.org/stable/gallery/user_interfaces/web_application_server_sgskip.html
+    # Save it to a temporary buffer.
+    buf = BytesIO()
+    fig.savefig(buf, format="png")
+    # Embed the result in the html output.
+    data = base64.b64encode(buf.getbuffer()).decode("ascii")
+    return f"<img src='data:image/png;base64,{data}'/>"
+
+
+
 # une route pour renvoyer un graphe de comparaison entre l'échantillon de l'id client et la population
 # test avec http://127.0.0.1:5001/api/v1/model/id_clients/comparaison?SK_ID_CURR=222222
 # test avec http://127.0.0.1:5001/api/v1/model/id_clients/comparaison?SK_ID_CURR=222222&feature=15
@@ -129,26 +178,24 @@ def comparaison():
     if 'SK_ID_CURR' in request.args:
         SK_ID_CURR_UNIQUE = int(request.args['SK_ID_CURR'])
 
-    #nb_feature = 10
+    nb_feature = 10
 
-    #if 'feature' in request.args:
-        #nb_feature = int(request.args['feature'])
+    if 'feature' in request.args:
+        nb_feature = int(request.args['feature'])
 
-    echantillon = DATA_SELECTION.loc[DATA_SELECTION["SK_ID_CURR"] == SK_ID_CURR_UNIQUE].drop('SK_ID_CURR', axis=1)
+    colonnes = feature_importance_df['feature'].head(nb_feature)
+    echantillon = DATA_SELECTION.loc[DATA_SELECTION["SK_ID_CURR"] == SK_ID_CURR_UNIQUE]
 
     # calcul des dimensions des sous-plots
-    n = len(echantillon.columns)
+    n = colonnes.nunique()
     rows = math.ceil(n / 3)
     cols = min(n, 3)
 
     fig = Figure(figsize=(12, rows * 3))
     axs = fig.subplots(nrows=rows, ncols=cols, squeeze=False)
 
-    # création de la figure et des axes
-    #fig, axs = plt.subplots(nrows=rows, ncols=cols, figsize=(20, rows * 3), squeeze=False)
-
     # génération des graphes pour chaque feature
-    for i, feature in enumerate(echantillon.columns):
+    for i, feature in enumerate(colonnes):
         row = i // cols
         col = i % cols
 
@@ -178,13 +225,14 @@ def comparaison():
         axs[row, col].legend()
 
     # suppression des graphiques vides de la dernière ligne
-    if len(echantillon.columns) % 3 != 0:
-        for i in range(len(echantillon.columns) % 3, 3):
+    if len(colonnes) % 3 != 0:
+        for i in range(len(colonnes) % 3, 3):
             fig.delaxes(axs[-1, i])
 
     # ajustement de l'espacement entre les sous-plots
     fig.tight_layout()
 
+    # https://matplotlib.org/stable/gallery/user_interfaces/web_application_server_sgskip.html
     # Save it to a temporary buffer.
     buf = BytesIO()
     fig.savefig(buf, format="png")
