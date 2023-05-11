@@ -99,6 +99,7 @@ def api_model_id_client():
     return jsonify(predictions)
 
 
+
 # une route pour renvoyer un graphe d'importance locale lime du modèle pour un id client
 # test avec http://127.0.0.1:5001/api/v1/model/id_clients/importance_locale?SK_ID_CURR=222222
 # test avec http://127.0.0.1:5001/api/v1/model/id_clients/importance_locale?SK_ID_CURR=222222&feature=15
