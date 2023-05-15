@@ -57,3 +57,4 @@ zlib==1.2.13
 
 lime~=0.2.0.1
 matplotlib~=3.7.1
+pytest~=7.1.2

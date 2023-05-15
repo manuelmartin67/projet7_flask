@@ -1,14 +1,12 @@
 from flask import Flask, request, jsonify, make_response
 import pandas as pd
 import pickle
-import lime
 import lime.lime_tabular
 import math
 from matplotlib.figure import Figure
 import base64
 from io import BytesIO
 import numpy as np
-import seaborn as sns
 
 
 
@@ -16,11 +14,11 @@ app = Flask(__name__)
 app.config["DEBUG"] = True
 
 
-SK_ID_CURR = pd.read_csv("./data/SK_ID_CURR.csv").to_dict(orient='records')
-DATA_SELECTION = pd.read_csv("./data/DATA_SELECTION.csv")
-X_train = pd.read_csv("./data/X_train.csv")
+SK_ID_CURR = pd.read_csv("/Users/manuelmartin67/Documents/Formation Data Scientist - Openclassrooms/Projet 7/Projet/projet7_flask/data/SK_ID_CURR.csv").to_dict(orient='records')
+DATA_SELECTION = pd.read_csv("/Users/manuelmartin67/Documents/Formation Data Scientist - Openclassrooms/Projet 7/Projet/projet7_flask/data/DATA_SELECTION.csv")
+X_train = pd.read_csv("/Users/manuelmartin67/Documents/Formation Data Scientist - Openclassrooms/Projet 7/Projet/projet7_flask/data/X_train.csv")
 
-with open('./data/best_model_seuil.pickle', 'rb') as f:
+with open('/Users/manuelmartin67/Documents/Formation Data Scientist - Openclassrooms/Projet 7/Projet/projet7_flask/data/best_model_seuil.pickle', 'rb') as f:
     model, seuil = pickle.load(f)
 
 # initialisation de la méthode LIME pour expliquer les prédictions
@@ -57,16 +55,11 @@ def api_id_client_all():
 # test avec http://127.0.0.1:5001/api/v1/data/id_clients?SK_ID_CURR=222222
 @app.route('/api/v1/data/id_clients', methods=['GET'])
 def api_id_client():
-    # Check if an ID was provided as part of the URL.
-    # If ID is provided, assign it to a variable.
-    # If no ID is provided, display an error in the browser.
-    if 'SK_ID_CURR' in request.args:
-        SK_ID_CURR_UNIQUE = int(request.args['SK_ID_CURR'])
+    SK_ID_CURR_UNIQUE = int(request.args['SK_ID_CURR'])
 
     # Create an empty list for our results
     results = []
     # Loop through the data and match results that fit the requested ID.
-    # IDs are unique, but other fields might return many results
 
     for individu in DATA_SELECTION.to_dict(orient='records'):
         if individu['SK_ID_CURR'] == SK_ID_CURR_UNIQUE:
@@ -80,11 +73,7 @@ def api_id_client():
 # test avec http://127.0.0.1:5001/api/v1/model/id_clients?SK_ID_CURR=222222
 @app.route('/api/v1/model/id_clients', methods=['GET'])
 def api_model_id_client():
-    # Check if an ID was provided as part of the URL.
-    # If ID is provided, assign it to a variable.
-    # If no ID is provided, display an error in the browser.
-    if 'SK_ID_CURR' in request.args:
-        SK_ID_CURR_UNIQUE = int(request.args['SK_ID_CURR'])
+    SK_ID_CURR_UNIQUE = int(request.args['SK_ID_CURR'])
 
     echantillon = DATA_SELECTION.loc[DATA_SELECTION["SK_ID_CURR"]==SK_ID_CURR_UNIQUE].drop('SK_ID_CURR', axis=1)
 
@@ -242,4 +231,5 @@ def comparaison():
     return f"<img src='data:image/png;base64,{data}'/>"
 
 
-app.run(port=5001)
+if __name__ == "__main__":
+    app.run(port=5001)
