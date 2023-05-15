@@ -14,11 +14,11 @@ app = Flask(__name__)
 app.config["DEBUG"] = True
 
 
-SK_ID_CURR = pd.read_csv("/Users/manuelmartin67/Documents/Formation Data Scientist - Openclassrooms/Projet 7/Projet/projet7_flask/data/SK_ID_CURR.csv").to_dict(orient='records')
-DATA_SELECTION = pd.read_csv("/Users/manuelmartin67/Documents/Formation Data Scientist - Openclassrooms/Projet 7/Projet/projet7_flask/data/DATA_SELECTION.csv")
-X_train = pd.read_csv("/Users/manuelmartin67/Documents/Formation Data Scientist - Openclassrooms/Projet 7/Projet/projet7_flask/data/X_train.csv")
+SK_ID_CURR = pd.read_csv("./data/SK_ID_CURR.csv").to_dict(orient='records')
+DATA_SELECTION = pd.read_csv("./data/DATA_SELECTION.csv")
+X_train = pd.read_csv("./data/X_train.csv")
 
-with open('/Users/manuelmartin67/Documents/Formation Data Scientist - Openclassrooms/Projet 7/Projet/projet7_flask/data/best_model_seuil.pickle', 'rb') as f:
+with open('./data/best_model_seuil.pickle', 'rb') as f:
     model, seuil = pickle.load(f)
 
 # initialisation de la méthode LIME pour expliquer les prédictions
