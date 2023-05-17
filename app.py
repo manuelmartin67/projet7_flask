@@ -115,7 +115,7 @@ def importance_locale():
 
     # création d'une réponse Flask avec les données HTML
     response = make_response(exp_html)
-    response.headers['Content-Type'] = 'text/html'
+    #response.headers['Content-Type'] = 'text/html'
 
     return response
 
@@ -135,7 +135,7 @@ def importance_globale():
     feature_importance_df_selection = feature_importance_df.head(nb_feature)
 
     # Tracez la feature importance globale
-    fig= Figure(figsize=(12, 5))
+    fig= Figure(figsize=(8, 5))
     axe = fig.add_subplot(111)
     axe.barh(y=feature_importance_df_selection['feature'], width=feature_importance_df_selection['importance'])
 
@@ -144,7 +144,7 @@ def importance_globale():
     axe.set_title('Feature Importance')
     axe.legend()
     axe.invert_yaxis()
-    fig.subplots_adjust(left=0.5)
+    fig.subplots_adjust(left=0.4)
 
 
     # https://matplotlib.org/stable/gallery/user_interfaces/web_application_server_sgskip.html
@@ -178,46 +178,45 @@ def comparaison():
 
     # calcul des dimensions des sous-plots
     n = colonnes.nunique()
-    rows = math.ceil(n / 3)
-    cols = min(n, 3)
+    #rows = max(1,math.ceil(n / 3))
+    #cols = min(n, 3)
 
-    fig = Figure(figsize=(12, rows * 3))
-    axs = fig.subplots(nrows=rows, ncols=cols, squeeze=False)
+    fig = Figure(figsize=(6, n * 3))
+    axs = fig.subplots(nrows=n, ncols=1, squeeze=False)
 
     # génération des graphes pour chaque feature
     for i, feature in enumerate(colonnes):
-        row = i // cols
-        col = i % cols
+        row = i
 
         # Calcul de la moyenne et de l'écart type de l'échantillon
         all_mean = np.mean(DATA_SELECTION[feature])
         sample_mean = np.mean(echantillon[feature])
 
         # histogramme des valeurs pour tous les individus dans le dataset
-        axs[row, col].hist(DATA_SELECTION[feature].values, bins=20, alpha=0.5, label='Population')
+        axs[row,0].hist(DATA_SELECTION[feature].values, bins=20, alpha=0.5, label='Population')
 
         # Affichage de la droite verticale de la moyenne de l'échantillon
-        axs[row, col].axvline(x=sample_mean, color='red', linestyle='--', label='Sample')
+        axs[row,0].axvline(x=sample_mean, color='red', linestyle='--', label='Sample')
 
         # Affichage de la droite verticale de la moyenne de la population
-        axs[row, col].axvline(x=all_mean, color='black', linestyle='-', label='Population Mean')
+        axs[row,0].axvline(x=all_mean, color='black', linestyle='-', label='Population Mean')
 
         # Configuration du graphique
-        axs[row, col].set_xlabel('Values')
-        axs[row, col].set_ylabel('Frequency')
-        axs[row, col].set_title('Distribution of Data')
-        axs[row, col].legend()
+        axs[row,0].set_xlabel('Values')
+        axs[row,0].set_ylabel('Frequency')
+        axs[row,0].set_title('Distribution of Data')
+        axs[row,0].legend()
 
         # ajout d'un titre pour le graphe
-        axs[row, col].set_title(feature)
+        axs[row,0].set_title(feature)
 
         # ajout d'une légende pour les histogrammes
-        axs[row, col].legend()
+        axs[row,0].legend()
 
     # suppression des graphiques vides de la dernière ligne
-    if len(colonnes) % 3 != 0:
-        for i in range(len(colonnes) % 3, 3):
-            fig.delaxes(axs[-1, i])
+    #if len(colonnes) % 3 != 0:
+        #for i in range(len(colonnes) % 3, 3):
+            #fig.delaxes(axs[-1, i])
 
     # ajustement de l'espacement entre les sous-plots
     fig.tight_layout()
