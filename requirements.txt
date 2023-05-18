@@ -6,3 +6,4 @@ flask~=2.2.2
 matplotlib~=3.7.1
 imbalanced-learn~=0.10.0
 lightgbm~=3.3.5
+gunicorn
