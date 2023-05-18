@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify, make_response
 import pandas as pd
 import pickle
 import lime.lime_tabular
-import math
 from matplotlib.figure import Figure
 import base64
 from io import BytesIO
@@ -94,11 +93,7 @@ def api_model_id_client():
 # test avec http://127.0.0.1:5001/api/v1/model/id_clients/importance_locale?SK_ID_CURR=222222&feature=15
 @app.route('/api/v1/model/id_clients/importance_locale/', methods=['GET'])
 def importance_locale():
-    # Check if an ID was provided as part of the URL.
-    # If ID is provided, assign it to a variable.
-    # If no ID is provided, display an error in the browser.
-    if 'SK_ID_CURR' in request.args:
-        SK_ID_CURR_UNIQUE = int(request.args['SK_ID_CURR'])
+    SK_ID_CURR_UNIQUE = int(request.args['SK_ID_CURR'])
 
     nb_feature = 10
 
@@ -115,7 +110,6 @@ def importance_locale():
 
     # création d'une réponse Flask avec les données HTML
     response = make_response(exp_html)
-    #response.headers['Content-Type'] = 'text/html'
 
     return response
 
@@ -162,11 +156,7 @@ def importance_globale():
 # test avec http://127.0.0.1:5001/api/v1/model/id_clients/comparaison?SK_ID_CURR=222222&feature=15
 @app.route('/api/v1/model/id_clients/comparaison/', methods=['GET'])
 def comparaison():
-    # Check if an ID was provided as part of the URL.
-    # If ID is provided, assign it to a variable.
-    # If no ID is provided, display an error in the browser.
-    if 'SK_ID_CURR' in request.args:
-        SK_ID_CURR_UNIQUE = int(request.args['SK_ID_CURR'])
+    SK_ID_CURR_UNIQUE = int(request.args['SK_ID_CURR'])
 
     nb_feature = 10
 
@@ -178,8 +168,6 @@ def comparaison():
 
     # calcul des dimensions des sous-plots
     n = colonnes.nunique()
-    #rows = max(1,math.ceil(n / 3))
-    #cols = min(n, 3)
 
     fig = Figure(figsize=(6, n * 3))
     axs = fig.subplots(nrows=n, ncols=1, squeeze=False)
@@ -212,11 +200,6 @@ def comparaison():
 
         # ajout d'une légende pour les histogrammes
         axs[row,0].legend()
-
-    # suppression des graphiques vides de la dernière ligne
-    #if len(colonnes) % 3 != 0:
-        #for i in range(len(colonnes) % 3, 3):
-            #fig.delaxes(axs[-1, i])
 
     # ajustement de l'espacement entre les sous-plots
     fig.tight_layout()
