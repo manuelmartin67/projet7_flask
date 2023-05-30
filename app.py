@@ -22,7 +22,7 @@ with open('./data/best_model_seuil.pickle', 'rb') as f:
 
 # initialisation de la méthode LIME pour expliquer les prédictions
 explainer = lime.lime_tabular.LimeTabularExplainer(X_train.values, feature_names=X_train.columns,
-                                                   class_names=['Accept. > 0.55', 'Refus > 0.45'])
+                                                   class_names=['CREDIT ACCORDE > 0.55', 'CREDIT REFUSE > 0.45'])
 
 # Obtenez le modèle LGBMClassifier du pipeline
 clf_model = model.named_steps['clf']
@@ -80,9 +80,9 @@ def api_model_id_client():
     predictions = (probabilites > seuil).astype(int)
 
     if predictions== 1 :
-        predictions = "Refus"
+        predictions = "CREDIT REFUSE"
     if predictions== 0 :
-        predictions = "Acceptation"
+        predictions = "CREDIT ACCORDE"
 
     return jsonify(predictions)
 
