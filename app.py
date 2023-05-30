@@ -22,7 +22,7 @@ with open('./data/best_model_seuil.pickle', 'rb') as f:
 
 # initialisation de la méthode LIME pour expliquer les prédictions
 explainer = lime.lime_tabular.LimeTabularExplainer(X_train.values, feature_names=X_train.columns,
-                                                   class_names=['CREDIT ACCORDE > 0.55', 'CREDIT REFUSE > 0.45'])
+                                                   class_names=['ACCORD > 0.55', 'REFUS > 0.45'])
 
 # Obtenez le modèle LGBMClassifier du pipeline
 clf_model = model.named_steps['clf']
