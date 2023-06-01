@@ -15,6 +15,9 @@ app.config["DEBUG"] = True
 
 SK_ID_CURR = pd.read_csv("./data/SK_ID_CURR.csv").to_dict(orient='records')
 DATA_SELECTION = pd.read_csv("./data/DATA_SELECTION.csv")
+DATA_sans_target = DATA_SELECTION.drop('TARGET',axis=1).dropna()
+DATA_accorde = DATA_SELECTION.loc[DATA_SELECTION['TARGET']==0].dropna()
+DATA_refuse = DATA_SELECTION.loc[DATA_SELECTION['TARGET']==1].dropna()
 X_train = pd.read_csv("./data/X_train.csv")
 
 with open('./data/best_model_seuil.pickle', 'rb') as f:
@@ -169,25 +172,27 @@ def comparaison():
     # calcul des dimensions des sous-plots
     n = colonnes.nunique()
 
-    fig = Figure(figsize=(6, n * 3))
-    axs = fig.subplots(nrows=n, ncols=1, squeeze=False)
+    fig = Figure(figsize=(10, n * 3))
+    axs = fig.subplots(nrows=n, ncols=2, squeeze=False)
 
     # génération des graphes pour chaque feature
     for i, feature in enumerate(colonnes):
         row = i
 
+        # Graphe pour les acceptés
         # Calcul de la moyenne et de l'écart type de l'échantillon
-        all_mean = np.mean(DATA_SELECTION[feature])
+        accorde_mean = np.mean(DATA_accorde[feature])
+        refuse_mean = np.mean(DATA_refuse[feature])
         sample_mean = np.mean(echantillon[feature])
 
         # histogramme des valeurs pour tous les individus dans le dataset
-        axs[row,0].hist(DATA_SELECTION[feature].values, bins=20, alpha=0.5, label='Population')
+        axs[row,0].hist(DATA_accorde[feature].values, bins=20, color = 'green' , alpha=0.5, label='Population crédit accepté')
 
         # Affichage de la droite verticale de la moyenne de l'échantillon
-        axs[row,0].axvline(x=sample_mean, color='red', linestyle='--', label='Sample')
+        axs[row,0].axvline(x=sample_mean, color='blue', linestyle='--', label=SK_ID_CURR_UNIQUE)
 
         # Affichage de la droite verticale de la moyenne de la population
-        axs[row,0].axvline(x=all_mean, color='black', linestyle='-', label='Population Mean')
+        axs[row,0].axvline(x=accorde_mean, color='black', linestyle='-', label='Moyenne population')
 
         # Configuration du graphique
         axs[row,0].set_xlabel('Values')
@@ -200,6 +205,29 @@ def comparaison():
 
         # ajout d'une légende pour les histogrammes
         axs[row,0].legend()
+
+        # Graphe pour les refusés
+        # Calcul de la moyenne et de l'écart type de l'échantillon
+        all_mean = np.mean(DATA_SELECTION[feature])
+        sample_mean = np.mean(echantillon[feature])
+
+        # histogramme des valeurs pour tous les individus dans le dataset
+        axs[row, 1].hist(DATA_refuse[feature].values, bins=20, color = 'red', alpha=0.5, label='Population crédit refusé')
+
+        # Affichage de la droite verticale de la moyenne de l'échantillon
+        axs[row, 1].axvline(x=sample_mean, color='blue', linestyle='--', label=SK_ID_CURR_UNIQUE)
+
+        # Affichage de la droite verticale de la moyenne de la population
+        axs[row, 1].axvline(x=refuse_mean, color='black', linestyle='-', label='Moyenne population')
+
+        # Configuration du graphique
+        axs[row, 1].set_xlabel('Valeurs')
+        axs[row, 1].set_ylabel('Fréquence')
+        axs[row, 1].set_title(feature)
+        axs[row, 1].legend()
+
+        # ajout d'une légende pour les histogrammes
+        axs[row, 1].legend()
 
     # ajustement de l'espacement entre les sous-plots
     fig.tight_layout()
