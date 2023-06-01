@@ -172,7 +172,7 @@ def comparaison():
     # calcul des dimensions des sous-plots
     n = colonnes.nunique()
 
-    fig = Figure(figsize=(10, n * 3))
+    fig = Figure(figsize=(8, n * 3))
     axs = fig.subplots(nrows=n, ncols=2, squeeze=False)
 
     # génération des graphes pour chaque feature
@@ -201,7 +201,7 @@ def comparaison():
         axs[row,0].legend()
 
         # ajout d'un titre pour le graphe
-        axs[row,0].set_title(feature)
+        axs[row,0].set_title("                                                                     "+feature)
 
         # ajout d'une légende pour les histogrammes
         axs[row,0].legend()
@@ -218,7 +218,7 @@ def comparaison():
         # Configuration du graphique
         axs[row, 1].set_xlabel('Valeurs')
         axs[row, 1].set_ylabel('Fréquence')
-        axs[row, 1].set_title(feature)
+        #axs[row, 1].set_title(feature)
         axs[row, 1].legend()
 
         # ajout d'une légende pour les histogrammes
