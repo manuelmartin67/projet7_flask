@@ -63,7 +63,7 @@ def api_id_client():
     results = []
     # Loop through the data and match results that fit the requested ID.
 
-    for individu in DATA_SELECTION.to_dict(orient='records'):
+    for individu in DATA_sans_target.to_dict(orient='records'):
         if individu['SK_ID_CURR'] == SK_ID_CURR_UNIQUE:
             results.append(individu)
     # Use the jsonify function from Flask to convert our list of
@@ -77,7 +77,7 @@ def api_id_client():
 def api_model_id_client():
     SK_ID_CURR_UNIQUE = int(request.args['SK_ID_CURR'])
 
-    echantillon = DATA_SELECTION.loc[DATA_SELECTION["SK_ID_CURR"]==SK_ID_CURR_UNIQUE].drop('SK_ID_CURR', axis=1)
+    echantillon = DATA_sans_target.loc[DATA_sans_target["SK_ID_CURR"]==SK_ID_CURR_UNIQUE].drop('SK_ID_CURR', axis=1)
 
     probabilites = model.predict_proba(echantillon)[:, 1]
     predictions = (probabilites > seuil).astype(int)
@@ -103,7 +103,7 @@ def importance_locale():
     if 'feature' in request.args:
         nb_feature = int(request.args['feature'])
 
-    echantillon = DATA_SELECTION.loc[DATA_SELECTION["SK_ID_CURR"] == SK_ID_CURR_UNIQUE].drop('SK_ID_CURR', axis=1).values[0]
+    echantillon = DATA_sans_target.loc[DATA_sans_target["SK_ID_CURR"] == SK_ID_CURR_UNIQUE].drop('SK_ID_CURR', axis=1).values[0]
 
     # explication de la première observation de test
     exp = explainer.explain_instance(echantillon, model.predict_proba,num_features=nb_feature)
@@ -167,7 +167,7 @@ def comparaison():
         nb_feature = int(request.args['feature'])
 
     colonnes = feature_importance_df['feature'].head(nb_feature)
-    echantillon = DATA_SELECTION.loc[DATA_SELECTION["SK_ID_CURR"] == SK_ID_CURR_UNIQUE]
+    echantillon = DATA_sans_target.loc[DATA_sans_target["SK_ID_CURR"] == SK_ID_CURR_UNIQUE]
 
     # calcul des dimensions des sous-plots
     n = colonnes.nunique()
@@ -205,11 +205,6 @@ def comparaison():
 
         # ajout d'une légende pour les histogrammes
         axs[row,0].legend()
-
-        # Graphe pour les refusés
-        # Calcul de la moyenne et de l'écart type de l'échantillon
-        all_mean = np.mean(DATA_SELECTION[feature])
-        sample_mean = np.mean(echantillon[feature])
 
         # histogramme des valeurs pour tous les individus dans le dataset
         axs[row, 1].hist(DATA_refuse[feature].values, bins=20, color = 'red', alpha=0.5, label='Population crédit refusé')
